@@ -4,10 +4,10 @@ The project description
 
 ## Team
 
-- teamMember
-- teamMember
-- teamMember
-- teamMember
+ - [Alexander Poet](https://github.com/AlexanderPoet)
+ - [Azmeer Salleh](https://github.com/azmeer)
+ - [Gunpreet Singh](https://github.com/kllrjatt)
+ - [Tyler Pate](https://github.com/TylerPate)
 
 ## Roadmap
 
