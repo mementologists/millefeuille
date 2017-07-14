@@ -51,7 +51,7 @@ Yarn is a replacement for npm. It's faster and *guarantees* consistency -- as yo
 ### Install Project Dependencies
 
 ```
-yarn global add grunt-cli knex eslint
+yarn global add grunt-cli knex
 ```
 
 ## App Configuration
