@@ -76,7 +76,7 @@ how many commits you have made since creating your branch by using
 git log
 ```
 
-and counting how many commits you have made, e.g. 5.
+and counting how many commits you have made.
 
 Then, start an interactive rebase by using this command in your branch:
 
