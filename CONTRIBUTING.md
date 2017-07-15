@@ -82,7 +82,7 @@ Then, start an interactive rebase by using this command in your branch:
 
 ```bash
 git rebase -i HEAD~N 
-``
+```
 
 where N in the number of commits you want to squash into one.
 During the interactive session, you will see a list of commits with
