@@ -20,6 +20,12 @@ Use github’s interface to make a fork of the repo, then add that repo as an up
 git remote add upstream https://github.com/mementologists/madeleine.git
 ```
 
+## Ensure you have the latest from the main repo
+
+```
+git pull --rebase upstream master
+```
+
 ### Cut a namespaced feature branch from master
 
 Your branch should follow this naming convention:
@@ -61,9 +67,36 @@ changes.
 ### Rebase upstream changes into your branch
 
 Once you are done making changes, you can begin the process of getting
-your code merged into the main repo. Step 1 is to rebase upstream
-changes to the master branch into yours by running this command
-from your branch:
+your code merged into the main repo.
+
+Step 1 is to squash your commit history into a single commit. Determine
+how many commits you have made since creating your branch by using
+
+```bash
+git log
+```
+
+and counting how many commits you have made, e.g. 5.
+
+Then, start an interactive rebase by using this command in your branch:
+
+```bash
+git rebase -i HEAD~N 
+``
+
+where N in the number of commits you want to squash into one.
+During the interactive session, you will see a list of commits with
+"pick" at the beginning of each line. Leave the top line unmodified
+and edit the rest of the lines to read "squash" instead of "pick" for
+each of them. Save your changes and quit the editor.
+
+Git will ask for an updated commit message summarizing all the changes
+associated with the commits which are being squashed. Follow the same
+guidelines as above for this message and specify a summary of all the
+changes being committed.
+
+Step 2 is to rebase upstream changes to the master branch into yours
+by running this command from your branch:
 
 ```bash
 git pull --rebase upstream master
