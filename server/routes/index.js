@@ -1,3 +1,1 @@
-module.exports.api = require('./api');
-
-module.exports.profiles = require('./profiles');
+module.exports.process = require('./process');
