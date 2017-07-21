@@ -1,10 +1,16 @@
 const Promise = require('bluebird');
-/* eslint-disable import/no-dynamic-require */ /* eslint-disable global-require */
-const plugin = require(`../plugins/${process.env.PROCESS_SERVER}`) || {};
-/* eslint-enable import/no-dynamic-require */ /* eslint-enable global-require */
-// const axios = require('axios');
 
-plugin.name = plugin.name || 'The Generic Process Server';
+const axios = require('axios');
+
+/* eslint-disable import/no-dynamic-require */ /* eslint-disable global-require */
+const service = process.env.PROCESS_SERVER;
+const plugin = require(`../plugins/${service}`) || {};
+/* eslint-enable import/no-dynamic-require */ /* eslint-enable global-require */
+
+const config = require('config').servers.services;
+
+plugin.name = `Millefeuille ${service} server` ||
+  'Generic Process Server';
 
 /* eslint-disable arrow-body-style */
 plugin.handleGet = plugin.handleGet || ((req, res) => {
@@ -12,22 +18,23 @@ plugin.handleGet = plugin.handleGet || ((req, res) => {
 });
 
 const fetchData = plugin.fetchData || ((req) => {
-  // return Promise of:
-  // Default: Make Call to S3
-  // Decorate momentObj with file and return
-  return Promise.resolve(req);
+  return axios.get(req.body.moment.media[service])
+  .then((res) => {
+    const newMoment = JSON.parse(JSON.stringify(req.body.moment));
+    newMoment.media[service] = res.data;
+    return newMoment;
+  });
 });
 
-const processData = plugin.processData || ((data) => {
-  // return Promise of:
-  // Default: Make API call to PROCESS_SERVER_API_URL
-  // Decorate momentObj with results and return
-  return Promise.resolve(data);
+const processData = plugin.processData || ((moment) => {
+  return Promise.resolve(moment);
 });
 
-const saveResults = plugin.saveResults || ((data) => {
-  // Default: Make API call to ANALYSIS_API_URL
-  return Promise.resolve(data);
+const saveResults = plugin.saveResults || ((moment) => {
+  const analysisPort = config.analysis.port ? `:${config.analysis.port}` : '';
+  const analysisEndpoint = `${config.analysis.uri}${analysisPort}/api/process`;
+
+  return axios.post(analysisEndpoint, { moment }).data;
 });
 
 const handleError = plugin.handleError || ((err) => {
