@@ -4,7 +4,7 @@
   "scripts": {
     "pomander": "curl -s https://raw.githubusercontent.com/mementologists/pomander/master/bin/install | bash",
     "start": "nodemon server",
-    "start-ana": "PROCESS_SERVER='analasys' nodemon server",
+    "start-ana": "PROCESS_SERVER='analysis' nodemon server",
     "start-text": "PROCESS_SERVER='text' nodemon server",
     "start-audio": "PROCESS_SERVER='audio' nodemon server",
     "start-image": "PROCESS_SERVER='image' nodemon server",
