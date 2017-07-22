@@ -1,7 +1,4 @@
-const knex = require('knex')(require('../knexfile'));
-const db = require('bookshelf')(knex);
+const models = require('./models');
 
-db.plugin('registry');
-
-module.exports = db;
+module.exports = models;
 

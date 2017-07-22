@@ -7,6 +7,8 @@ const service = process.env.PROCESS_SERVER;
 const plugin = require(`../plugins/${service}`) || {};
 /* eslint-enable import/no-dynamic-require */ /* eslint-enable global-require */
 
+const utils = require('../lib/processUtils');
+
 const config = require('config').servers.services;
 
 plugin.name = `Millefeuille ${service} server` ||
@@ -18,9 +20,10 @@ plugin.handleGet = plugin.handleGet || ((req, res) => {
 });
 
 const fetchData = plugin.fetchData || ((req) => {
-  return axios.get(req.body.moment.media[service])
+  return axios.get(req.body.moment.media[service].uri, req.body.moment.media[service].s3Cred)
   .then((res) => {
-    const newMoment = JSON.parse(JSON.stringify(req.body.moment));
+    const newMoment = utils.clone(req.body.moment);
+    newMoment.media = {};
     newMoment.media[service] = res.data;
     return newMoment;
   });
