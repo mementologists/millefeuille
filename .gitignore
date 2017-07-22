@@ -30,6 +30,7 @@ coverage
 pomHooks/
 build/
 dist/
+db/db/
 
 # editor artifacts
 *.tmp
