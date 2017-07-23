@@ -1,14 +1,13 @@
 const mongoose = require('mongoose');
 
+const findOrCreate = require('mongoose-findorcreate');
+
 const schemas = require('./schemas');
 
 module.exports =
   Object.keys(schemas).reduce((models, schemaName) => {
-    /* eslint-disable no-param-reassign */
-    models[schemaName] =
-      mongoose.model(schemaName, mongoose.Schema(schemas[schemaName],
-        { timestamps: true }));
+    schemas[schemaName].plugin(findOrCreate);
+    models[schemaName] = mongoose.model(schemaName, schemas[schemaName]); // eslint-disable-line 
     return models;
-    /* eslint-enable no-param-reassign */
   }, {});
 

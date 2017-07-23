@@ -30,6 +30,7 @@
     "knex": "^0.12.9",
     "mongodb": "2.2.27",
     "mongoose": "4.11.3",
+    "mongoose-findorcreate": "2.0.0",
     "morgan": "^1.8.1",
     "passport": "^0.3.2",
     "passport-facebook": "^2.1.1",
