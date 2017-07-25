@@ -1,26 +1,21 @@
 const mongoose = require('mongoose');
 
-module.exports.User = {
-  userId: Number,
-  summaryId: Number,
-  moments: [Number]
-};
+module.exports.User = mongoose.Schema({
+  userId: { type: Number, default: 0 },
+  summary: {
+    joyCount: { type: Number, default: 0 },
+    fearCount: { type: Number, default: 0 },
+    angerCount: { type: Number, default: 0 },
+    disgustCount: { type: Number, default: 0 },
+    sadnessCount: { type: Number, default: 0 }
+  }
+}, { collection: 'Users', timestamps: true });
 
-module.exports.Summary = {
-  userId: Number,
-  joyCount: Number,
-  fearCount: Number,
-  angerCount: Number,
-  disgustCount: Number,
-  sadnessCount: Number
-};
 
-module.exports.Moment = {
+module.exports.Sentiment = mongoose.Schema({
   userId: Number,
-  analyses: [Number]
-};
-
-module.exports.Analysis = {
-  type: String,
+  momentId: Number,
+  key: String,
+  average: String,
   analysis: mongoose.Schema.Types.Mixed
-};
+}, { collection: 'Sentiments', timestamps: true });

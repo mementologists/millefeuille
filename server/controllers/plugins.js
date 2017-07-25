@@ -40,19 +40,15 @@ const saveResults = plugin.saveResults || ((moment) => {
   return axios.post(analysisEndpoint, { moment }).data;
 });
 
-const handleError = plugin.handleError || ((err) => {
-  /* eslint-disable no-console */
-  console.log(`${plugin.name} caught the following error: ${err}`);
-  /* eslint-enable no-console */
-});
-/* eslint-enable arrow-body-style */
-
 plugin.handlePost = plugin.handlePost || ((req, res) => {
   res.status(201).send({ data: `Posted to ${plugin.name}!` });
   fetchData(req)
   .then(processData)
   .then(saveResults)
-  .catch(handleError);
+  .catch((err) => {
+    console.log(`${plugin.name} caught the following error: ${err}`); // eslint-disable-line
+    res.status(500).send(err);
+  });
 });
 
 module.exports = plugin;
