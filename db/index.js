@@ -6,7 +6,7 @@ const mongoose = require('mongoose');
 
 const mongoUri = process.env.MONGODB_URI || config.servers.mongo.uri;
 
-const options = { promiseLibrary: Promise };
+const options = { promiseLibrary: Promise, useMongoClient: true };
 
 mongoose.connect(mongoUri, options);
 
