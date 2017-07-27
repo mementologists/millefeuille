@@ -9,23 +9,70 @@ module.exports.textSummary = (textAnalysis) => {
   return tones[getMaxIndex(tones)].tone_id;
 };
 
-module.exports.audioSummary = module.exports.textSummary;
-
-module.exports.imageSummary = imageAnalysis => imageAnalysis;
-  // iterate over each face
-  // sum each likelihood (1/6) weighted by
-  //    detectionConfidence, blurred, underExposed, headwear
-  // divide the total likelihood by the number of faces
-
-module.exports.summarize = (sentiments) => {
-  let sumTones = [];
-  const maxTone = Math.max(...(sumTones = sentiments.reduce((totals, sentiment) => {
-    /* eslint-disable no-return-assign */
-    sentiment.analysis.document_tone.tone_categories[0].tones.forEach((tone, idx) =>
-      /* eslint-disable no-param-reassign */ /* eslint-enable no-return-assign */
-      totals[idx] = totals[idx] ? totals[idx] + tone.score : tone.score);
-      /* eslint-enable no-param-reassign */
-    return totals;
-  }, [])));
-  return ['anger', 'disgust', 'fear', 'joy', 'sadness'][sumTones.findIndex(el => el === maxTone)];
+const normalizeSummary = (aggregate) => {
+  Object.keys(aggregate.summary).forEach((emotion) => {
+    aggregate.summary[emotion] /= aggregate.total; // eslint-disable-line
+  });
+  delete aggregate.total; // eslint-disable-line
+  return aggregate;
 };
+
+module.exports.summarizeText = (textAnalysis) => {
+  const tones = textAnalysis.document_tone.tone_categories[0].tones;
+  const aggregate = { total: 0, summary: {}, raw: [textAnalysis] };
+  tones.forEach((tone) => {
+    aggregate.summary[tone.tone_id] = tone.score;
+    aggregate.total += tone.score;
+  });
+  return normalizeSummary(aggregate);
+};
+
+const mapEmotions = (aggregate) => {
+  const eMap = { happiness: 'joy' };
+  Object.keys(eMap).forEach((emotion) => {
+    aggregate.summary[eMap[emotion]] = aggregate.summary[emotion]; // eslint-disable-line
+    delete aggregate.summary[emotion]; // eslint-disable-line
+  });
+  return aggregate;
+};
+
+const scrubEmotions = (aggregate) => {
+  const scrubs = ['neutral', 'contempt', 'surprise'];
+  scrubs.forEach((emotion) => {
+    aggregate.total -= aggregate.summary[emotion]; // eslint-disable-line
+    delete aggregate.summary[emotion]; // eslint-disable-line
+  });
+  return aggregate;
+};
+
+module.exports.summarizeImage = imageAnalyses =>
+  normalizeSummary(
+    mapEmotions(
+      scrubEmotions(
+        imageAnalyses.reduce((aggregate, analysis) => {
+          const weight = analysis.faceRectangle.height * analysis.faceRectangle.width;
+          Object.keys(analysis.scores).forEach((emotion) => {
+            aggregate.summary[emotion] = // eslint-disable-line
+              !aggregate.summary[emotion] ? analysis.scores[emotion] * weight : // eslint-disable-line
+              aggregate.summary[emotion] + analysis.scores[emotion] * weight; // eslint-disable-line
+            aggregate.total += analysis.scores[emotion] * weight; // eslint-disable-line
+          });
+          aggregate.raw.push(analysis); // eslint-disable-line
+          return aggregate;
+        }, { total: 0, summary: {}, raw: [] })
+      )));
+
+const getMaxEmotion = summary =>
+      Object.keys(summary).sort((a, b) => summary[a] > summary[b])[0];
+
+module.exports.summarize = (sentiments) => 
+  getMaxEmotion(
+    normalizeSummary(
+      sentiments.reduce((sum, sentiment) => {
+        Object.keys(sentiment.analysis.summary).forEach(emotion => {
+          sum.total += sentiment.analysis.summary[emotion];
+          sum.summary[emotion] += sentiment.analysis.summary[emotion];
+        });
+        return sum;
+      }, { total: 0, summary: { anger: 0, disgust: 0, fear: 0, joy: 0, sadness: 0 } })
+    ).summary);
