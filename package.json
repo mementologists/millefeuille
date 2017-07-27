@@ -6,7 +6,7 @@
     "start": "nodemon server",
     "start-ana": "PROCESS_SERVER='analysis' nodemon server",
     "start-text": "PROCESS_SERVER='text' nodemon server",
-    "start-audio": "PROCESS_SERVER='audio' nodemon server",
+    "start-video": "PROCESS_SERVER='video' nodemon server",
     "start-image": "PROCESS_SERVER='image' nodemon server",
     "test": "NODE_ENV=test grunt test",
     "build": "webpack --watch",

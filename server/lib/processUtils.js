@@ -1,3 +1,8 @@
+const Promise = require('bluebird');
+
+const config = require('config').servers.services.video;
+
+const axios = require('axios');
 
 const getMaxIndex = array =>
       array.findIndex(el => el.score === Math.max(...array.map(tone => tone.score)));
@@ -65,13 +70,45 @@ module.exports.summarizeImage = imageAnalyses =>
 module.exports.getMaxEmotion = summary =>
   Object.keys(summary).sort((a, b) => summary[b] - summary[a])[0];
 
-module.exports.summarize = sentiments =>
+module.exports.summarizeVideo = videoAnalyses =>
   normalizeSummary(
-    sentiments.reduce((sum, sentiment) => {
-      Object.keys(sentiment.analysis.summary).forEach((emotion) => {
-        sum.total += sentiment.analysis.summary[emotion]; // eslint-disable-line
-        sum.summary[emotion] += sentiment.analysis.summary[emotion]; // eslint-disable-line
-      });
-      return sum;
-    }, { total: 0, summary: { anger: 0, disgust: 0, fear: 0, joy: 0, sadness: 0 } })
-  ).summary;
+    mapEmotions(
+      scrubEmotions(
+        videoAnalyses.reduce((aggregate, analysis) => {
+          if (analysis.length) {
+            const scores = analysis[0].windowMeanScores;
+            Object.keys(scores).forEach((emotion) => {
+              aggregate.summary[emotion] += scores[emotion]; // eslint-disable-line
+              aggregate.total += scores[emotion]; // eslint-disable-line
+            });
+            aggregate.raw.push(analysis);
+          }
+          return aggregate;
+        }, { total: 0, summary: { anger: 0, disgust: 0, fear: 0, joy: 0, sadness: 0 }, raw: [] }
+    ))
+  ));
+
+const getMaxEmotion = summary =>
+  Object.keys(summary).sort((a, b) => summary[b] - summary[a])[0];
+
+module.exports.summarize = sentiments =>
+  getMaxEmotion(
+    normalizeSummary(
+      sentiments.reduce((sum, sentiment) => {
+        Object.keys(sentiment.analysis.summary).forEach((emotion) => {
+          sum.total += sentiment.analysis.summary[emotion]; // eslint-disable-line
+          sum.summary[emotion] += sentiment.analysis.summary[emotion]; // eslint-disable-line
+        });
+        return sum;
+      }, { total: 0, summary: { anger: 0, disgust: 0, fear: 0, joy: 0, sadness: 0 } })
+    ).summary);
+
+module.exports.delay = t =>
+  new Promise(resolve => setTimeout(resolve, t));
+
+module.exports.saveResults = ((moment) => {
+  const analysisPort = config.analysis.port ? `:${config.analysis.port}` : '';
+  const analysisEndpoint = `${config.analysis.uri}${analysisPort}/api/process`;
+
+  return axios.post(analysisEndpoint, { moment }).data;
+});
