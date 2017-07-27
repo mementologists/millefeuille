@@ -15,7 +15,7 @@ module.exports.handleGet = (req, res) =>
 
 
 module.exports.fetchData = (req) => {
-  console.log('got Analysis Request!: ', JSON.stringify(req.body.moment)); // eslint-disable-line
+  console.log('got Analysis Request!: ', req.body.moment); // eslint-disable-line
   return Promise.resolve(req.body.moment);
 };
 
@@ -41,7 +41,7 @@ module.exports.saveResults = (moment) => {
   if (moment.sentiment) {
     const madeleinePort = config.madeleine.port ? `:${config.madeleine.port}` : '';
     const madeleineEndpoint = `${config.madeleine.uri}${madeleinePort}/api/process`;
-    return axios.post(madeleineEndpoint, { moment }).data;
+    return axios.post(madeleineEndpoint, { moment }, { 'Content-Type': 'application/json' });
   }
   return Promise.resolve(moment);
 };
