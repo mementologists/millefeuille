@@ -63,15 +63,15 @@ module.exports.summarizeImage = imageAnalyses =>
       )));
 
 const getMaxEmotion = summary =>
-      Object.keys(summary).sort((a, b) => summary[a] > summary[b])[0];
+  Object.keys(summary).sort((a, b) => summary[b] - summary[a])[0];
 
-module.exports.summarize = (sentiments) => 
+module.exports.summarize = sentiments =>
   getMaxEmotion(
     normalizeSummary(
       sentiments.reduce((sum, sentiment) => {
-        Object.keys(sentiment.analysis.summary).forEach(emotion => {
-          sum.total += sentiment.analysis.summary[emotion];
-          sum.summary[emotion] += sentiment.analysis.summary[emotion];
+        Object.keys(sentiment.analysis.summary).forEach((emotion) => {
+          sum.total += sentiment.analysis.summary[emotion]; // eslint-disable-line
+          sum.summary[emotion] += sentiment.analysis.summary[emotion]; // eslint-disable-line
         });
         return sum;
       }, { total: 0, summary: { anger: 0, disgust: 0, fear: 0, joy: 0, sadness: 0 } })
