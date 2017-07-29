@@ -8,7 +8,14 @@ module.exports.User = mongoose.Schema({
     angerCount: { type: Number, default: 0 },
     disgustCount: { type: Number, default: 0 },
     sadnessCount: { type: Number, default: 0 }
-  }
+  },
+  history: [
+    {
+      momentId: Number,
+      summary:
+      { anger: Number, disgust: Number, fear: Number, joy: Number, sadness: Number }
+    }
+  ]
 }, { collection: 'Users', timestamps: true });
 
 
