@@ -6,7 +6,8 @@ module.exports.upsertDonut = (moment) => {
   const update = {};
   update[`summary.${moment.sentiment}Count`] = 1;
   return User.findOneAndUpdate({ userId: moment.userId },
-    { $inc: update }, { new: true, upsert: true })
+    { $inc: update, $push: { history: { momentId: moment.id, summary: moment.summary } } },
+      { new: true, upsert: true })
   .then((userRecord) => {
     /* eslint-disable no-param-reassign */
     moment.summary = userRecord.summary;

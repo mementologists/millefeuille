@@ -26,7 +26,8 @@ module.exports.processData = moment =>
     if (sentiments.length === moment.keys.length) {
       /* eslint-disable no-param-reassign */
       moment.media = {};
-      moment.sentiment = utils.summarize(sentiments);
+      moment.summary = utils.summarize(sentiments);
+      moment.sentiment = utils.getMaxEmotion(moment.summary);
       /* eslint-enable no-param-reassign */
       return ctrls.Users.upsertDonut(moment);
     }
