@@ -15,7 +15,11 @@ module.exports.handleGet = (req, res) =>
 
 
 module.exports.fetchData = (req) => {
-  console.log('got Analysis Request!: ', req.body.moment); // eslint-disable-line
+  console.log('got Analysis Request!: ', req.body.moment); // eslint-disable-line no-console
+  Object.keys(req.body.moment.media).forEach(
+    mediaType => console.log( // eslint-disable-line no-console
+      `${mediaType} analysis summary: ${JSON.stringify(req.body.moment.media[mediaType].summary)}`)
+  );
   return Promise.resolve(req.body.moment);
 };
 

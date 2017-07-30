@@ -84,7 +84,19 @@ module.exports.summarizeVideo = videoAnalyses =>
             aggregate.raw.push(analysis);
           }
           return aggregate;
-        }, { total: 0, summary: { anger: 0, disgust: 0, fear: 0, joy: 0, sadness: 0 }, raw: [] }
+        },
+          { total: 0,
+            summary: {
+              neutral: 0,
+              happiness: 0,
+              surprise: 0,
+              sadness: 0,
+              anger: 0,
+              disgust: 0,
+              fear: 0,
+              contempt: 0
+            },
+            raw: [] }
     ))
   ));
 
