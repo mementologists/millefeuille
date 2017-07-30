@@ -4,81 +4,108 @@ const axios = require('axios');
 
 const utils = require('../lib/processUtils');
 
-const config = require('config').servers.services.video;
+const config = require('config').servers.services;
 
-class AxiosCfg {
-  constructor() {
-    this.keyIndex = Math.floor(Math.random() * config.keys.length);
-  }
-  getCfg() {
-    this.keyIndex = (this.keyIndex + 1) % config.keys.length;
-    return {
-      headers: {
-        'Content-Type': 'application/json',
-        'Ocp-Apim-Subscription-Key': config.keys[this.keyIndex]
-      }
-    };
-  }
-}
+const getCfg = key =>
+      ({
+        headers: {
+          'Content-Type': 'application/json',
+          'Ocp-Apim-Subscription-Key': key
+        }
+      });
 
+const creditQueue = config.video.keys;
 const inQueue = [];
-// const processingQueue = [];
-const axiosCfg = new AxiosCfg();
+const pollList = [];
+const analysisPort = config.analysis.port ? `:${config.analysis.port}` : '';
+const analysisEndpoint = `${config.analysis.uri}${analysisPort}/api/process`;
 
-const waitUntilProcessed = (uri, cfg, loopCnt = 0, maxLoops = 250, t = 30000) =>
-  utils.delay(t)
-  .then(() => axios.get(uri, cfg))
-  .then((res) => {
-    if ((res.data.status === 'Running') && (loopCnt < maxLoops)) {
-      return waitUntilProcessed(uri, cfg, loopCnt + 1, maxLoops, t);
-    }
-    return Promise.resolve(res.data);
-  })
+const postVideo = ({ moment, key }) =>
+  axios.post(config.video.api_uri, { url: moment.media.video.uri }, getCfg(key))
+  .then(res => res.headers['operation-location'])
+  .then(pollURI => pollList.push({ moment, key, pollURI, loops: 0 }))
   .catch((err) => {
-    console.log('Millefeuille Video Processor Got ERR waiting for Video to be processed: ', err); // eslint-disable-line
-    throw (err);
+    console.log( // eslint-disable-line no-console
+      'postVideo error: ', err.response.status, err.response.statusText);
+    if (err.response.status === 429) {
+      console.log( // eslint-disable-line no-console
+        `Returning moment ${moment.id} and key ${key} for retry`);
+      inQueue.unshift(moment);
+      creditQueue.unshift(key);
+      return; // eslint-disable-line no-useless-return
+    }
+    throw err;
+  }); // handle errors from post
+
+const postWorker = () =>
+  utils.delay(config.video.pollInterval)
+  .then(() => {
+    console.log( // eslint-disable-line no-console
+      `Postworker wakes: ${inQueue.length} vids in Q w/${creditQueue.length} keys`);
+    while (inQueue.length && creditQueue.length) {
+      console.log( // eslint-disable-line
+        `Incoming Video to process: moment ${inQueue[0].id} key: ${creditQueue[0]}`);
+      postVideo({ moment: inQueue.shift(), key: creditQueue.shift() });
+    }
+    console.log('PostWorker going back to sleep '); // eslint-disable-line
+    return postWorker();
   });
 
-const processData = (moment) => {
-  const cfg = axiosCfg.getCfg();
-  return axios.post(config.api_uri, { url: moment.media.video.uri }, cfg)
-  .then(res => res.headers['operation-location'])
-  .then(answerPollURI => waitUntilProcessed(answerPollURI, cfg))
-  .then(data => utils.summarizeVideo(data.processingResult.fragments.events))
-  .then((summary) => {
-    const newMoment = utils.clone(moment);
-    newMoment.media = {};
-    newMoment.media.video = summary;
-    return newMoment;
+const postResults = ({ res, moment }) => {
+  const newMoment = utils.clone(moment);
+  newMoment.media = {};
+  const analysis = JSON.parse(res.data.processingResult).fragments[0].events;
+  newMoment.media.video = utils.summarizeVideo(analysis);
+  console.log( // eslint-disable-line no-console
+    'Posting Summarized video moment to Ana: ', JSON.stringify(newMoment));
+  return axios.post(analysisEndpoint, { moment: newMoment });
+  //  .catch() // handle errors from post
+};
+
+const checkVideoStatus = (video) => {
+  const { moment, key, pollURI, loops } = video;
+  console.log( // eslint-disable-line no-console
+    `Checking video status for moment: ${moment.id} using ${key} try #${loops}`);
+  return axios.get(pollURI, getCfg(key))
+  .then((res) => {
+    console.log( // eslint-disable-line no-console
+      `Video polling status moment: ${moment.id} key: ${key}: ${res.data.status}`);
+    if (res.data.status === 'Succeeded') {
+      pollList.splice(pollList.findIndex(vid => vid.key === key), 1);
+      creditQueue.push(key);
+      return postResults({ res, moment });
+    }
+    return video.loops++; // eslint-disable-line
+  })
+  .catch((err) => {
+    console.log( // eslint-disable-line no-console
+      'checkVideoStatus error: ', err.response.status, err.response.statusText);
+    if (err.response.status === 429) {
+      console.log('429 Rate error - Retrying'); // eslint-disable-line no-console
+      return; // eslint-disable-line no-useless-return
+    }
+    throw err;
   });
 };
 
-const fetchData = (req, res) => {
+const pollWorker = () =>
+  utils.delay(config.video.pollInterval)
+  .tap(() => {
+    console.log( // eslint-disable-line no-console
+      `Pollworker wakes: ${pollList.length} videos to process`);
+  })
+ .then(() => Promise.map(pollList, video => checkVideoStatus(video)))
+ .then(() => {
+   console.log('PollWorker going back to sleep'); // eslint-disable-line no-console
+   return pollWorker();
+ });
+
+const enqueueMoment = (req, res) => {
   res.status(201).send({ data: 'Posted to Millefeuille video server!' });
   inQueue.push(req.body.moment);
 };
 
-const saveResults = ((moment) => {
-  const analysisPort = config.analysis.port ? `:${config.analysis.port}` : '';
-  const analysisEndpoint = `${config.analysis.uri}${analysisPort}/api/process`;
-
-  return axios.post(analysisEndpoint, { moment }).data;
-});
-
-const postWorker = () =>
-  (utils.delay(config.pollInterval)
-  .then(() => {
-    if (inQueue.length) {
-      console.log('hey! there is video to be processed: ', inQueue[0]); // eslint-disable-line
-      return processData(inQueue.shift());
-    }
-    console.log('hey! Nothing to do. Going back to sleep '); // eslint-disable-line
-    throw (null); // eslint-disable-line
-  })
-  .then(moment => saveResults(moment))
-  .then(() => { throw (null); }) // eslint-disable-line
-  .catch(() => postWorker()));
-
-module.exports.handlePost = (req, res) => fetchData(req, res);
-
+module.exports.handlePost = (req, res) => enqueueMoment(req, res);
 postWorker();
+pollWorker();
+
