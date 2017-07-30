@@ -16,7 +16,7 @@ module.exports.textSummary = (textAnalysis) => {
 
 const normalizeSummary = (aggregate) => {
   Object.keys(aggregate.summary).forEach((emotion) => {
-    aggregate.summary[emotion] /= aggregate.total; // eslint-disable-line
+    aggregate.summary[emotion] /= aggregate.total ? aggregate.total : 1; // eslint-disable-line
   });
   delete aggregate.total; // eslint-disable-line
   return aggregate;
