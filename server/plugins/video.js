@@ -6,14 +6,6 @@ const utils = require('../lib/processUtils');
 
 const config = require('config').servers.services;
 
-const getCfg = key =>
-      ({
-        headers: {
-          'Content-Type': 'application/json',
-          'Ocp-Apim-Subscription-Key': key
-        }
-      });
-
 const creditQueue = config.video.keys;
 const inQueue = [];
 const pollList = [];
@@ -21,7 +13,7 @@ const analysisPort = config.analysis.port ? `:${config.analysis.port}` : '';
 const analysisEndpoint = `${config.analysis.uri}${analysisPort}/api/process`;
 
 const postVideo = ({ moment, key }) =>
-  axios.post(config.video.api_uri, { url: moment.media.video.uri }, getCfg(key))
+  axios.post(config.video.api_uri, { url: moment.media.video.uri }, utils.getCfg(key))
   .then(res => res.headers['operation-location'])
   .then(pollURI => pollList.push({ moment, key, pollURI, loops: 0 }))
   .catch((err) => {
@@ -66,7 +58,7 @@ const checkVideoStatus = (video) => {
   const { moment, key, pollURI, loops } = video;
   console.log( // eslint-disable-line no-console
     `Checking video status for moment: ${moment.id} using ${key} try #${loops}`);
-  return axios.get(pollURI, getCfg(key))
+  return axios.get(pollURI, utils.getCfg(key))
   .then((res) => {
     console.log( // eslint-disable-line no-console
       `Video polling status moment: ${moment.id} key: ${key}: ${res.data.status}`);
