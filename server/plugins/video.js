@@ -27,7 +27,7 @@ const postVideo = ({ moment, key }) =>
       return; // eslint-disable-line no-useless-return
     }
     throw err;
-  }); // handle errors from post
+  });
 
 const postWorker = () =>
   utils.delay(config.video.pollInterval)
@@ -41,6 +41,10 @@ const postWorker = () =>
     }
     console.log('PostWorker going back to sleep '); // eslint-disable-line
     return postWorker();
+  })
+  .catch((err) => {
+    console.log( // eslint-disable-line no-console
+      'PostWorker error: ', err);
   });
 
 const postResults = ({ res, moment }) => {
@@ -50,8 +54,12 @@ const postResults = ({ res, moment }) => {
   newMoment.media.video = utils.summarizeVideo(analysis);
   console.log( // eslint-disable-line no-console
     'Posting Summarized video moment to Ana: ', JSON.stringify(newMoment));
-  return axios.post(analysisEndpoint, { moment: newMoment });
-  //  .catch() // handle errors from post
+  return axios.post(analysisEndpoint, { moment: newMoment })
+  .catch((err) => {
+    console.log( // eslint-disable-line no-console
+      'Millefeuille Video Proc. Error when posting result to Analysis Server:', err);
+    throw err;
+  });
 };
 
 const checkVideoStatus = (video) => {
@@ -90,6 +98,9 @@ const pollWorker = () =>
  .then(() => {
    console.log('PollWorker going back to sleep'); // eslint-disable-line no-console
    return pollWorker();
+ })
+ .catch((err) => {
+   console.log('PollWorker error: ', err); // eslint-disable-line no-console
  });
 
 const enqueueMoment = (req, res) => {
