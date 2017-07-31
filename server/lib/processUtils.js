@@ -9,6 +9,20 @@ const getMaxIndex = array =>
 
 module.exports.clone = obj => Object.assign({}, obj);
 
+module.exports.getParamURI = (uri, params) => {
+  const paramString =
+        Object.keys(params).map(key => `${key}=${params[key]}`).join('&');
+  return `${uri}?${paramString}`;
+};
+
+module.exports.getCfg = key =>
+   ({
+     headers: {
+       'Content-Type': 'application/json',
+       'Ocp-Apim-Subscription-Key': key
+     }
+   });
+
 module.exports.textSummary = (textAnalysis) => {
   const tones = textAnalysis.document_tone.tone_categories[0].tones;
   return tones[getMaxIndex(tones)].tone_id;

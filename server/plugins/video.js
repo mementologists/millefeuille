@@ -6,14 +6,6 @@ const utils = require('../lib/processUtils');
 
 const config = require('config').servers.services;
 
-const getCfg = key =>
-      ({
-        headers: {
-          'Content-Type': 'application/json',
-          'Ocp-Apim-Subscription-Key': key
-        }
-      });
-
 const creditQueue = config.video.keys;
 const inQueue = [];
 const pollList = [];
@@ -21,7 +13,7 @@ const analysisPort = config.analysis.port ? `:${config.analysis.port}` : '';
 const analysisEndpoint = `${config.analysis.uri}${analysisPort}/api/process`;
 
 const postVideo = ({ moment, key }) =>
-  axios.post(config.video.api_uri, { url: moment.media.video.uri }, getCfg(key))
+  axios.post(config.video.api_uri, { url: moment.media.video.uri }, utils.getCfg(key))
   .then(res => res.headers['operation-location'])
   .then(pollURI => pollList.push({ moment, key, pollURI, loops: 0 }))
   .catch((err) => {
@@ -35,7 +27,7 @@ const postVideo = ({ moment, key }) =>
       return; // eslint-disable-line no-useless-return
     }
     throw err;
-  }); // handle errors from post
+  });
 
 const postWorker = () =>
   utils.delay(config.video.pollInterval)
@@ -49,6 +41,10 @@ const postWorker = () =>
     }
     console.log('PostWorker going back to sleep '); // eslint-disable-line
     return postWorker();
+  })
+  .catch((err) => {
+    console.log( // eslint-disable-line no-console
+      'PostWorker error: ', err);
   });
 
 const postResults = ({ res, moment }) => {
@@ -58,15 +54,19 @@ const postResults = ({ res, moment }) => {
   newMoment.media.video = utils.summarizeVideo(analysis);
   console.log( // eslint-disable-line no-console
     'Posting Summarized video moment to Ana: ', JSON.stringify(newMoment));
-  return axios.post(analysisEndpoint, { moment: newMoment });
-  //  .catch() // handle errors from post
+  return axios.post(analysisEndpoint, { moment: newMoment })
+  .catch((err) => {
+    console.log( // eslint-disable-line no-console
+      'Millefeuille Video Proc. Error when posting result to Analysis Server:', err);
+    throw err;
+  });
 };
 
 const checkVideoStatus = (video) => {
   const { moment, key, pollURI, loops } = video;
   console.log( // eslint-disable-line no-console
     `Checking video status for moment: ${moment.id} using ${key} try #${loops}`);
-  return axios.get(pollURI, getCfg(key))
+  return axios.get(pollURI, utils.getCfg(key))
   .then((res) => {
     console.log( // eslint-disable-line no-console
       `Video polling status moment: ${moment.id} key: ${key}: ${res.data.status}`);
@@ -98,6 +98,9 @@ const pollWorker = () =>
  .then(() => {
    console.log('PollWorker going back to sleep'); // eslint-disable-line no-console
    return pollWorker();
+ })
+ .catch((err) => {
+   console.log('PollWorker error: ', err); // eslint-disable-line no-console
  });
 
 const enqueueMoment = (req, res) => {
