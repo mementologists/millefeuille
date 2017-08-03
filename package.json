@@ -14,7 +14,7 @@
     "test": "NODE_ENV=test grunt test",
     "build": "webpack --watch",
   },
-  "author": "Hack Reactor",
+  "author": "Azmeer Salleh",
   "license": "MIT",
   "dependencies": {
     "axios": "^0.16.2",
