@@ -8,9 +8,11 @@
     "start-text": "PROCESS_SERVER='text' nodemon server",
     "start-video": "PROCESS_SERVER='video' nodemon server",
     "start-image": "PROCESS_SERVER='image' nodemon server",
+    "db-mkdb": "mkdir db/db",
+    "db-dev": "mongod --dbpath db/db",
+    "db-drop": "mongo analysis --eval 'db.dropDatabase()'",
     "test": "NODE_ENV=test grunt test",
     "build": "webpack --watch",
-    "db-dev": "mongod --dbpath db/db"
   },
   "author": "Hack Reactor",
   "license": "MIT",
